@@ -1,6 +1,5 @@
 package com.cheng.audio
 
-import android.media.session.MediaSession
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaSessionCompat
