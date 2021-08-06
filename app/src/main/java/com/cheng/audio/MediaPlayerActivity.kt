@@ -2,6 +2,7 @@ package com.cheng.audio
 
 import android.content.ComponentName
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -9,6 +10,7 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.cheng.audio.databinding.ActivityMediaPlayerBinding
 
 class MediaPlayerActivity : AppCompatActivity() {
 //    onCreate() 构造 MediaBrowserCompat。传入您的 MediaBrowserService 的名称和您已定义的 MediaBrowserCompat.ConnectionCallback。
@@ -46,9 +48,12 @@ class MediaPlayerActivity : AppCompatActivity() {
             // The Service has refused our connection
         }
     }
+    private lateinit var binding: ActivityMediaPlayerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        binding = ActivityMediaPlayerBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         mediaBrowser =
             MediaBrowserCompat(
                 this,
@@ -79,18 +84,31 @@ class MediaPlayerActivity : AppCompatActivity() {
     fun buildTransportControls() {
         val mediaController = MediaControllerCompat.getMediaController(this@MediaPlayerActivity)
         // Grab the view for the play/pause button
-        playPause = findViewById<ImageView>(R.id.play_pause).apply {
-            setOnClickListener {
-                // Since this is a play/pause button, you'll need to test the current state
-                // and choose the action accordingly
 
-                val pbState = mediaController.playbackState.state
-                if (pbState == PlaybackStateCompat.STATE_PLAYING) {
-                    mediaController.transportControls.pause()
-                } else {
-                    mediaController.transportControls.play()
-                }
-            }
+        binding.btnPlayNew.setOnClickListener {
+            var extras = Bundle().apply { putString(MediaMetadataCompat.METADATA_KEY_TITLE, "圣诞歌") }
+            mediaController.transportControls.playFromUri(rawToUri(R.raw.jinglebells), extras)
+        }
+
+        binding.btnPlay.setOnClickListener {
+            // Since this is a play/pause button, you'll need to test the current state
+            // and choose the action accordingly
+            val pbState = mediaController.playbackState.state
+            if (pbState == PlaybackStateCompat.STATE_PLAYING) return@setOnClickListener
+            mediaController.transportControls.play()
+        }
+
+        binding.btnPause.setOnClickListener {
+            if (mediaController.playbackState.state != PlaybackStateCompat.STATE_PLAYING) return@setOnClickListener
+            mediaController.transportControls.pause()
+        }
+
+        binding.btnSkipNext.setOnClickListener {
+            mediaController.transportControls.skipToNext()
+        }
+
+        binding.btnSkipPrevious.setOnClickListener {
+            mediaController.transportControls.skipToPrevious()
         }
 
         // Display the initial state
@@ -103,11 +121,18 @@ class MediaPlayerActivity : AppCompatActivity() {
 
     private var controllerCallback = object : MediaControllerCompat.Callback() {
 
-        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {}
+        override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+            binding.tvNameSong.text = metadata?.getText(MediaMetadataCompat.METADATA_KEY_TITLE)
+        }
 
-        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {}
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+        }
     }
 
+    private fun rawToUri(id: Int): Uri? {
+        val uriStr = "android.resource://$packageName/$id"
+        return Uri.parse(uriStr)
+    }
 
 
 }
